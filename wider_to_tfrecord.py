@@ -121,6 +121,13 @@ def run(images_path, description_file, output_path, no_bbox=False):
     writer = tf.io.TFRecordWriter(output_path)
 
     i = 0
+    err_table = {}
+    def log_err(e):
+        k = str(e)
+        if k in err_table.keys():
+            err_table[k] += 1
+        else:
+            err_table[k] = 1
 
     print("Processing {}".format(images_path))
     while True:
@@ -134,11 +141,12 @@ def run(images_path, description_file, output_path, no_bbox=False):
             i += 1
 
         except IOError as e:
-            print(e)
+            log_err(e)
         except Exception as e:
-            print(e)
+            log_err(e)
 
     writer.close()
+    print(err_table)
 
     print("Correctly created record for {} images\n".format(i))
 
