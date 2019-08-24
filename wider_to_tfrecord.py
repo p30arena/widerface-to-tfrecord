@@ -16,7 +16,7 @@ def parse_test_example(f, images_path):
 
     filename = f.readline().rstrip()
     if not filename:
-        raise IOError('filename is nil')
+        raise IOError('filename is nil for {}'.format(filename))
 
     filepath = os.path.join(images_path, filename)
 
@@ -60,7 +60,7 @@ def parse_example(f, images_path):
 
     filename = f.readline().rstrip()
     if not filename:
-        raise IOError('filename is nil')
+        raise IOError('filename is nil for {}'.format(filename))
 
     filepath = os.path.join(images_path, filename)
 
@@ -133,9 +133,8 @@ def run(images_path, description_file, output_path, no_bbox=False):
             writer.write(tf_example.SerializeToString())
             i += 1
 
-        except IOError:
-            print("IOError: stopping")
-            break
+        except IOError as e:
+            print(e)
         except Exception as e:
             print(e)
 
