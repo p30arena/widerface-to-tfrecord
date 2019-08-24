@@ -134,9 +134,10 @@ def run(images_path, description_file, output_path, no_bbox=False):
             i += 1
 
         except IOError:
+            print("IOError: stopping")
             break
         except Exception as e:
-            raise e
+            print(e)
 
     writer.close()
 
