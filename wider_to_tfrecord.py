@@ -7,6 +7,9 @@ import hashlib
 import config
 from utils import dataset_util
 
+class FileNameIsNoneException(Exception):
+    pass
+
 def parse_test_example(f, images_path):
     height = None # Image height
     width = None # Image width
@@ -16,7 +19,7 @@ def parse_test_example(f, images_path):
 
     filename = f.readline().rstrip()
     if not filename:
-        raise IOError('filename is nil for {}'.format(filename))
+        raise FileNameIsNoneException()
 
     filepath = os.path.join(images_path, filename)
 
@@ -60,7 +63,7 @@ def parse_example(f, images_path):
 
     filename = f.readline().rstrip()
     if not filename:
-        raise IOError('filename is nil for {}'.format(filename))
+        raise FileNameIsNoneException()
 
     filepath = os.path.join(images_path, filename)
 
@@ -142,6 +145,8 @@ def run(images_path, description_file, output_path, no_bbox=False):
 
         except IOError as e:
             log_err(e)
+        except FileNameIsNoneException:
+            break
         except Exception as e:
             log_err(e)
 
