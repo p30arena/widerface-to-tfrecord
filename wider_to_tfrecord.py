@@ -118,7 +118,7 @@ def parse_example(f, images_path):
 
 def run(images_path, description_file, output_path, no_bbox=False):
     f = open(description_file)
-    writer = tf.python_io.TFRecordWriter(output_path)
+    writer = tf.io.TFRecordWriter(output_path)
 
     i = 0
 
@@ -167,4 +167,4 @@ def main(unused_argv):
 
 
 if __name__ == '__main__':
-    tf.app.run()
+    tf.compat.v1.app.run()
