@@ -16,7 +16,7 @@ def parse_test_example(f, images_path):
 
     filename = f.readline().rstrip()
     if not filename:
-        raise IOError()
+        raise IOError('filename is nil')
 
     filepath = os.path.join(images_path, filename)
 
@@ -60,7 +60,7 @@ def parse_example(f, images_path):
 
     filename = f.readline().rstrip()
     if not filename:
-        raise IOError()
+        raise IOError('filename is nil')
 
     filepath = os.path.join(images_path, filename)
 
@@ -73,12 +73,12 @@ def parse_example(f, images_path):
 
     face_num = int(f.readline().rstrip())
     if not face_num:
-        raise Exception()
+        raise Exception('face_num is nil for {}'.format(filepath))
 
     for i in range(face_num):
         annot = f.readline().rstrip().split()
         if not annot:
-            raise Exception()
+            raise Exception('annot is nil for {}'.format(filepath))
 
         # WIDER FACE DATASET CONTAINS SOME ANNOTATIONS WHAT EXCEEDS THE IMAGE BOUNDARY
         if(float(annot[2]) > 25.0):
@@ -135,8 +135,8 @@ def run(images_path, description_file, output_path, no_bbox=False):
 
         except IOError:
             break
-        except Exception:
-            raise
+        except Exception as e:
+            raise e
 
     writer.close()
 
