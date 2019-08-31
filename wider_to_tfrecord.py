@@ -7,177 +7,198 @@ import hashlib
 import config
 from utils import dataset_util
 
-class FileNameIsNoneException(Exception):
-    pass
+
+def print_error(e):
+  print(e)
+  import traceback
+  print(traceback.format_exc())
+
+
+class FaceNumIsNone(Exception):
+  pass
+
+
+class FileNameIsNone(Exception):
+  pass
+
 
 def parse_test_example(f, images_path):
-    height = None # Image height
-    width = None # Image width
-    filename = None # Filename of the image. Empty if image is not from file
-    encoded_image_data = None # Encoded image bytes
-    image_format = b'jpeg' # b'jpeg' or b'png'
+  height = None  # Image height
+  width = None  # Image width
+  filename = None  # Filename of the image. Empty if image is not from file
+  encoded_image_data = None  # Encoded image bytes
+  image_format = b'jpeg'  # b'jpeg' or b'png'
 
-    filename = f.readline().rstrip()
-    if not filename:
-        raise FileNameIsNoneException()
+  filename = f.readline().rstrip()
+  if not filename:
+    raise FileNameIsNone()
 
-    filepath = os.path.join(images_path, filename)
+  filepath = os.path.join(images_path, filename)
 
-    image_raw = cv2.imread(filepath)
+  image_raw = cv2.imread(filepath)
 
-    encoded_image_data = open(filepath, "rb").read()
-    key = hashlib.sha256(encoded_image_data).hexdigest()
+  encoded_image_data = open(filepath, "rb").read()
+  key = hashlib.sha256(encoded_image_data).hexdigest()
 
-    height, width, channel = image_raw.shape
+  height, width, channel = image_raw.shape
 
-    tf_example = tf.train.Example(features=tf.train.Features(feature={
-        'image/height': dataset_util.int64_feature(int(height)),
-        'image/width': dataset_util.int64_feature(int(width)),
-        'image/filename': dataset_util.bytes_feature(filename.encode('utf-8')),
-        'image/source_id': dataset_util.bytes_feature(filename.encode('utf-8')),
-        'image/key/sha256': dataset_util.bytes_feature(key.encode('utf8')),
-        'image/encoded': dataset_util.bytes_feature(encoded_image_data),
-        'image/format': dataset_util.bytes_feature('jpeg'.encode('utf8')),
-        }))
+  tf_example = tf.train.Example(features=tf.train.Features(feature={
+    'image/height': dataset_util.int64_feature(int(height)),
+    'image/width': dataset_util.int64_feature(int(width)),
+    'image/filename': dataset_util.bytes_feature(filename.encode('utf-8')),
+    'image/source_id': dataset_util.bytes_feature(filename.encode('utf-8')),
+    'image/key/sha256': dataset_util.bytes_feature(key.encode('utf8')),
+    'image/encoded': dataset_util.bytes_feature(encoded_image_data),
+    'image/format': dataset_util.bytes_feature('jpeg'.encode('utf8')),
+  }))
 
-
-    return tf_example
+  return tf_example
 
 
 def parse_example(f, images_path):
-    height = None # Image height
-    width = None # Image width
-    filename = None # Filename of the image. Empty if image is not from file
-    encoded_image_data = None # Encoded image bytes
-    image_format = b'jpeg' # b'jpeg' or b'png'
+  height = None  # Image height
+  width = None  # Image width
+  filename = None  # Filename of the image. Empty if image is not from file
+  encoded_image_data = None  # Encoded image bytes
+  image_format = b'jpeg'  # b'jpeg' or b'png'
 
-    xmins = [] # List of normalized left x coordinates in bounding box (1 per box)
-    xmaxs = [] # List of normalized right x coordinates in bounding box (1 per box)
-    ymins = [] # List of normalized top y coordinates in bounding box (1 per box)
-    ymaxs = [] # List of normalized bottom y coordinates in bounding box (1 per box)
-    classes_text = [] # List of string class name of bounding box (1 per box)
-    classes = [] # List of integer class id of bounding box (1 per box)
-    poses = []
-    truncated = []
-    difficult_obj = []
+  xmins = []  # List of normalized left x coordinates in bounding box (1 per box)
+  xmaxs = []  # List of normalized right x coordinates in bounding box (1 per box)
+  ymins = []  # List of normalized top y coordinates in bounding box (1 per box)
+  ymaxs = []  # List of normalized bottom y coordinates in bounding box (1 per box)
+  classes_text = []  # List of string class name of bounding box (1 per box)
+  classes = []  # List of integer class id of bounding box (1 per box)
+  poses = []
+  truncated = []
+  difficult_obj = []
 
-    filename = f.readline().rstrip()
-    if not filename:
-        raise FileNameIsNoneException()
+  filename = f.readline().rstrip()
+  if not filename:
+    raise FileNameIsNone()
 
-    filepath = os.path.join(images_path, filename)
+  filepath = os.path.join(images_path, filename)
 
-    image_raw = cv2.imread(filepath)
+  image_raw = cv2.imread(filepath)
 
-    encoded_image_data = open(filepath, "rb").read()
-    key = hashlib.sha256(encoded_image_data).hexdigest()
+  encoded_image_data = open(filepath, "rb").read()
+  key = hashlib.sha256(encoded_image_data).hexdigest()
 
-    height, width, channel = image_raw.shape
+  height, width, channel = image_raw.shape
 
-    face_num = int(f.readline().rstrip())
-    if not face_num:
-        raise Exception('face_num is nil for {}'.format(filepath))
+  face_num = int(f.readline().rstrip())
+  if not face_num:
+    raise FaceNumIsNone()
 
-    for i in range(face_num):
-        annot = f.readline().rstrip().split()
-        if not annot:
-            raise Exception('annot is nil for {}'.format(filepath))
+  for i in range(face_num):
+    annot = f.readline().rstrip().split()
+    if not annot:
+      raise Exception()
 
-        # WIDER FACE DATASET CONTAINS SOME ANNOTATIONS WHAT EXCEEDS THE IMAGE BOUNDARY
-        if(float(annot[2]) > 25.0):
-            if(float(annot[3]) > 30.0):
-                xmins.append( max(0.005, (float(annot[0]) / width) ) )
-                ymins.append( max(0.005, (float(annot[1]) / height) ) )
-                xmaxs.append( min(0.995, ((float(annot[0]) + float(annot[2])) / width) ) )
-                ymaxs.append( min(0.995, ((float(annot[1]) + float(annot[3])) / height) ) )
-                classes_text.append(b'face')
-                classes.append(1)
-                poses.append("front".encode('utf8'))
-                truncated.append(int(0))
+    # WIDER FACE DATASET CONTAINS SOME ANNOTATIONS WHAT EXCEEDS THE IMAGE BOUNDARY
+    if (float(annot[2]) > 25.0):
+      if (float(annot[3]) > 30.0):
+        xmins.append(max(0.005, (float(annot[0]) / width)))
+        ymins.append(max(0.005, (float(annot[1]) / height)))
+        xmaxs.append(min(0.995, ((float(annot[0]) + float(annot[2])) / width)))
+        ymaxs.append(min(0.995, ((float(annot[1]) + float(annot[3])) / height)))
+        classes_text.append(b'face')
+        classes.append(1)
+        poses.append("front".encode('utf8'))
+        truncated.append(int(0))
 
+  if len(classes) == 0:
+    return None
 
-    tf_example = tf.train.Example(features=tf.train.Features(feature={
-        'image/height': dataset_util.int64_feature(int(height)),
-        'image/width': dataset_util.int64_feature(int(width)),
-        'image/filename': dataset_util.bytes_feature(filename.encode('utf-8')),
-        'image/source_id': dataset_util.bytes_feature(filename.encode('utf-8')),
-        'image/key/sha256': dataset_util.bytes_feature(key.encode('utf8')),
-        'image/encoded': dataset_util.bytes_feature(encoded_image_data),
-        'image/format': dataset_util.bytes_feature('jpeg'.encode('utf8')),
-        'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
-        'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
-        'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
-        'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
-        'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
-        'image/object/class/label': dataset_util.int64_list_feature(classes),
-        'image/object/difficult': dataset_util.int64_list_feature(int(0)),
-        'image/object/truncated': dataset_util.int64_list_feature(truncated),
-        'image/object/view': dataset_util.bytes_list_feature(poses),
-        }))
+  tf_example = tf.train.Example(features=tf.train.Features(feature={
+    'image/height': dataset_util.int64_feature(int(height)),
+    'image/width': dataset_util.int64_feature(int(width)),
+    'image/filename': dataset_util.bytes_feature(filename.encode('utf-8')),
+    'image/source_id': dataset_util.bytes_feature(filename.encode('utf-8')),
+    'image/key/sha256': dataset_util.bytes_feature(key.encode('utf8')),
+    'image/encoded': dataset_util.bytes_feature(encoded_image_data),
+    'image/format': dataset_util.bytes_feature('jpeg'.encode('utf8')),
+    'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
+    'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
+    'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
+    'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
+    'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
+    'image/object/class/label': dataset_util.int64_list_feature(classes),
+    'image/object/difficult': dataset_util.int64_list_feature(int(0)),
+    'image/object/truncated': dataset_util.int64_list_feature(truncated),
+    'image/object/view': dataset_util.bytes_list_feature(poses),
+  }))
 
-
-    return tf_example
+  return tf_example
 
 
 def run(images_path, description_file, output_path, no_bbox=False):
-    f = open(description_file)
-    writer = tf.io.TFRecordWriter(output_path)
+  f = open(description_file)
+  writer = tf.io.TFRecordWriter(output_path)
 
-    i = 0
-    err_table = {}
-    def log_err(e):
-        k = str(e)
-        if k in err_table.keys():
-            err_table[k] += 1
-        else:
-            err_table[k] = 1
+  i = 0
 
-    print("Processing {}".format(images_path))
-    while True:
-        try:
-            if no_bbox:
-                tf_example = parse_test_example(f, images_path)
-            else:
-                tf_example = parse_example(f, images_path)
+  print("Processing {}".format(images_path))
+  while True:
+    try:
+      if no_bbox:
+        tf_example = parse_test_example(f, images_path)
+      else:
+        tf_example = parse_example(f, images_path)
 
-            writer.write(tf_example.SerializeToString())
-            i += 1
+      if tf_example is None:
+        continue
 
-        except IOError as e:
-            log_err(e)
-        except FileNameIsNoneException:
-            break
-        except Exception as e:
-            log_err(e)
+      writer.write(tf_example.SerializeToString())
+      i += 1
 
-    writer.close()
-    print(err_table)
+    except FileNameIsNone:
+      break
+    except FaceNumIsNone:
+      continue
+    except IOError:
+      continue
+    except Exception:
+      raise
 
-    print("Correctly created record for {} images\n".format(i))
+  writer.close()
+
+  print("Correctly created record for {} images\n".format(i))
 
 
 def main(unused_argv):
-    # Training
+  # Training
+  try:
     if config.TRAIN_WIDER_PATH is not None:
-        images_path = os.path.join(config.TRAIN_WIDER_PATH, "images")
-        description_file = os.path.join(config.GROUND_TRUTH_PATH, "wider_face_train_bbx_gt.txt")
-        output_path = os.path.join(config.OUTPUT_PATH, "train.tfrecord")
+      images_path = os.path.join(config.TRAIN_WIDER_PATH, "images")
+      description_file = os.path.join(config.GROUND_TRUTH_PATH, "wider_face_train_bbx_gt.txt")
+      output_path = os.path.join(config.OUTPUT_PATH, "train.tfrecord")
+      if os.path.isfile(output_path) is False:
         run(images_path, description_file, output_path)
+  except Exception as e:
+    print_error(e)
 
-    # Validation
+  # Validation
+  try:
     if config.VAL_WIDER_PATH is not None:
-        images_path = os.path.join(config.VAL_WIDER_PATH, "images")
-        description_file = os.path.join(config.GROUND_TRUTH_PATH, "wider_face_val_bbx_gt.txt")
-        output_path = os.path.join(config.OUTPUT_PATH, "val.tfrecord")
+      images_path = os.path.join(config.VAL_WIDER_PATH, "images")
+      description_file = os.path.join(config.GROUND_TRUTH_PATH, "wider_face_val_bbx_gt.txt")
+      output_path = os.path.join(config.OUTPUT_PATH, "val.tfrecord")
+      if os.path.isfile(output_path) is False:
         run(images_path, description_file, output_path)
+  except Exception as e:
+    print_error(e)
 
-    # Testing. This set does not contain bounding boxes, so the tfrecord will contain images only
+  # Testing. This set does not contain bounding boxes, so the tfrecord will contain images only
+  try:
     if config.TEST_WIDER_PATH is not None:
-        images_path = os.path.join(config.TEST_WIDER_PATH, "images")
-        description_file = os.path.join(config.GROUND_TRUTH_PATH, "wider_face_test_filelist.txt")
-        output_path = os.path.join(config.OUTPUT_PATH, "test.tfrecord")
+      images_path = os.path.join(config.TEST_WIDER_PATH, "images")
+      description_file = os.path.join(config.GROUND_TRUTH_PATH, "wider_face_test_filelist.txt")
+      output_path = os.path.join(config.OUTPUT_PATH, "test.tfrecord")
+      if os.path.isfile(output_path) is False:
         run(images_path, description_file, output_path, no_bbox=True)
+  except Exception as e:
+    print_error(e)
 
 
 if __name__ == '__main__':
-    tf.compat.v1.app.run()
+  tf.compat.v1.app.run()
