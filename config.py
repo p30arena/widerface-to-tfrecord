@@ -1,14 +1,17 @@
 # Training
-TRAIN_WIDER_PATH = "../WIDER_train/"
+TRAIN_WIDER_PATH = "../data/WIDER_train/"
 
 # Validation
-VAL_WIDER_PATH = "../WIDER_val/"
+VAL_WIDER_PATH = "../data/WIDER_val/"
 
 # Testing
-TEST_WIDER_PATH = "../WIDER_test/"
+TEST_WIDER_PATH = "../data/WIDER_test/"
 
 # Ground Truth
-GROUND_TRUTH_PATH = "../wider_face_split/"
+GROUND_TRUTH_PATH = "../data/wider_face_split/"
 
 # Output
-OUTPUT_PATH = "../output/"
+OUTPUT_PATH = "../data/output/"
+
+# RESIZE = 288
+RESIZE = 320
