@@ -13,4 +13,4 @@ GROUND_TRUTH_PATH = "../data/wider_face_split/"
 # Output
 OUTPUT_PATH = "../data/output/"
 
-RESIZE = 288
+RESIZE = 510
